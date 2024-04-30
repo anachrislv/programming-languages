@@ -1,10 +1,12 @@
 open Printf
-open List
 
 let calculate_fairness seq =
   let n = List.length seq in
   let sum = List.fold_left (+) 0 seq in
-  let prefix_sums = List.fold_left (fun acc x -> acc @ [List.hd (List.rev acc) + x]) [0] seq in
+  let prefix_sums = Array.make (n + 1) 0 in
+  for i = 1 to n do
+    prefix_sums.(i) <- prefix_sums.(i - 1) + List.nth seq (i - 1)
+  done;
   let rec min_difference i j min_diff =
     if j = n then min_diff
     else
