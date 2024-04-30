@@ -1,28 +1,37 @@
-let min_difference seq =
-  let total_sum = List.fold_left (+) 0 seq in
+open Printf
+open List
+
+let calculate_fairness seq =
   let n = List.length seq in
-  let dp = Array.make_matrix n (total_sum + 1) false in
+  let sum = List.fold_left (+) 0 seq in
+  let prefix_sums = List.fold_left (fun acc x -> acc @ [List.hd (List.rev acc) + x]) [0] seq in
+  let rec min_difference i j min_diff =
+    if j = n then min_diff
+    else
+      let current = prefix_sums.(j) - prefix_sums.(i) in
+      let diff = abs (current - (sum - current)) in
+      min_difference i (j + 1) (min min_diff diff)
+  in
+  let rec min_difference_for_all i min_diff =
+    if i = n then min_diff
+    else min_difference_for_all (i + 1) (min_difference i (i + 1) min_diff)
+  in
+  min_difference_for_all 0 max_int
 
-  (* Initialize dp array *)
-  dp.(0).(0) <- true;
-  dp.(0).(List.hd seq) <- true;
+let main () =
+  let args = Array.to_list Sys.argv in
+  match args with
+  | [_; filename] ->
+      let file = open_in filename in
+      (try
+         let n = int_of_string (input_line file) in
+         let seq = List.map int_of_string (Str.split (Str.regexp " +") (input_line file)) in
+         let result = calculate_fairness seq in
+         printf "%d\n" result
+       with
+       | End_of_file -> close_in file; exit 1)
+  | _ ->
+      eprintf "Usage: %s <filename>\n" Sys.argv.(0);
+      exit 1
 
-  for i = 1 to n - 1 do
-    for j = 0 to total_sum do
-      dp.(i).(j) <- dp.(i-1).(j) || (j >= List.nth seq i && dp.(i-1).(j - List.nth seq i))
-    done;
-  done;
-
-  let min_diff = ref max_int in
-
-  for j = 0 to total_sum do
-    if dp.(n-1).(j) then
-      min_diff := min !min_diff (abs (total_sum - 2 * j));
-  done;
-
-  !min_diff
-
-let () =
-  let n = read_int () in
-  let sequence = Array.init n (fun _ -> read_int ()) in
-  Printf.printf "Minimum difference: %d\n" (min_difference (Array.to_list sequence))
+let () = main ()
