@@ -1,60 +1,69 @@
-#include <cstdio>
+#include <iostream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
-#include <climits> // Include this header for INT_MAX
-#include <iostream>
+#include <limits.h>
+#include <numeric>
+
 using namespace std;
 
+int N, result;
 
-int N;
+int calculateFairness(const vector<int>& seq) {
 
-int minDifference(const vector<int>& seq ) {
-    int total_sum = 0;
-    for (int num : seq) {
-        total_sum += num;
-    }
+    int sum, current, difference;
 
-    vector<vector<bool>> dp(N, vector<bool>(total_sum + 1, false));
+    current = 0;
+    difference = INT_MAX;
+    sum = accumulate(seq.begin(), seq.end(), 0);
 
+    vector<int> prefixSums(seq.size() + 1);
+    partial_sum(seq.begin(), seq.end(), prefixSums.begin() + 1);
 
-    // Initialize dp array
-    dp[0][0] = true;
-    dp[0][seq[0]] = true;
-
-
-    for (int i = 1; i < N; i++) {
-        for (int j = 0; j <= total_sum; j++) {
-            dp[i][j] = dp[i-1][j] || (j >= seq[i] && dp[i-1][j - seq[i]]);
-        }
-    }
-
-    int min_diff = INT_MAX;
-
-    for (int j = 0; j <= total_sum; ++j) {
-        if (dp[N-1][j]) {
-            min_diff = min(min_diff, abs(total_sum - 2 * j));
-        }
-    }
     
-    return min_diff;
+    for (int i = 0; i < N; i++) {
+        for (int j = i + 1; j <N; j++) {
+            current = prefixSums[j] - prefixSums[i];
+            difference = min(difference, abs(current - (sum - current)));
+        }
+    }
+
+    
 
 
+    return difference;
 }
 
-
-int main() {
-
-    scanf("%d", &N);
-    vector<int> sequence(N);
-
-
-    for (int i = 0; i < N; i++ ){
-        scanf("%d", &sequence[i]);
-
-
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        cerr << "Usage: " << argv[0] << " <filename>\n";
+        return 1;
     }
 
-    cout << "Minimum difference: " << minDifference(sequence) << endl;
+    ifstream file(argv[1]);
+    if (!file) {
+        cerr << "Failed to open file.\n";
+        return 1;
+    }
+
+    if (!(file >> N)) {
+        cerr << "Failed to read integer from file.\n";
+        return 1;
+    }
+
+    vector<int> seq(N);
+    for (int i = 0; i < N; ++i) {
+        if (!(file >> seq[i])) {
+            cerr << "Failed to read integer from file.\n";
+            return 1;
+        }
+    }
+
+    file.close();
+
+    result = calculateFairness(seq);
+    printf("%d\n", result);
 
 
+    return 0;
 }
